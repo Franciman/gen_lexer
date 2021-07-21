@@ -1,0 +1,47 @@
+function string()
+{
+    match `"`
+    while(look != `"`)
+    {
+        # Escape character
+        if(look = `\`)
+        {
+            match {
+                `t`  => noop; 
+                `n`  => noop;
+                `r`  => noop;
+                `"`  => noop;
+                `\\` => noop;
+                else => error "Invalid Escape Sequence";
+            }
+        }
+        else
+        {
+            match-regex "[0-9a-zA-Z]"
+        }
+    }
+    match `"`
+    accept "StringLiteral"
+}
+
+function number()
+{
+    match-regex "[0-9]+"
+    if(look = `.`)
+    {
+        # Fractional part
+        match-regex "[0-9]+"
+        accept "DoubleLiteral"
+    }
+    else
+    {
+        accept "IntegerLiteral"
+    }
+}
+
+# Lex strings and numbers:
+
+non-deterministic {
+    call string()
+    call number()
+}
