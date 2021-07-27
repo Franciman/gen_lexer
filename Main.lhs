@@ -9,6 +9,7 @@ import ListCursor
 import qualified Data.Map.Strict as M
 import Control.Monad.State.Strict
 import Data.Maybe
+import LensPack
 \end{code}
 
 We can model a lexer (short for Lexical Analyzer) as a finite state machine.
@@ -130,9 +131,15 @@ telling us where lexing started and where it got accepted.
 \begin{code}
 
 data EvalState = EvalState
-    { inputString :: String
-    , cursor      :: ListCursor Char
+    { _inputString :: String
+    , _cursor      :: ListCursor Char
     }
+
+inputString :: Lens' EvalState String
+inputString = lens _inputString (\v s -> s { _inputString = v })
+
+cursor :: Lens' EvalState (ListCursor Char)
+cursor = lens _cursor (\v s -> s { _cursor = v })
 \end{code}
 
 We also want to keep an environment that binds each variable to its value
@@ -154,20 +161,50 @@ Now we can define the monad in which the interpreter runs:
 
 \begin{code}
 data InterpreterState = InterpreterState
-    { evalState :: EvalState
-    , env       :: NameEnv
+    { _inputState :: EvalState
+    , _env        :: NameEnv
     }
 
-data FiniteStateMachine a = State InterpreterState a
+inputState :: Lens' InterpreterState EvalState
+inputState = lens _inputState (\v s -> s { _inputState = v })
+
+env :: Lens' InterpreterState NameEnv
+env = lens _env (\v s -> s { _env = v })
+
+type FiniteStateMachine a = State InterpreterState a
 \end{code}
 
 Basically the interpreter is a finite state machine, so let us define the primitive operations of this machine:
 
+
+This action moves the input cursor one position ahead:
+
 \begin{code}
-consumeInput :: FiniteStateMachine Char
-consumeInput = undefined
-    
+consumeInput :: FiniteStateMachine ()
+consumeInput = modify' (& inputState . cursor %~ moveNext)
 \end{code}
+
+This action queries the input to see if there is more to consume:
+
+\begin{code}
+hasMoreInput :: FiniteStateMachine Bool
+hasMoreInput = do
+    cursor <- gets (^. inputState . cursor)
+    return (hasNext cursor)
+\end{code}
+
+Now we want to also query the current input character:
+
+\begin{code}
+currentInput :: FiniteStateMachine Char
+currentInput = do
+    cursor <- gets (^. inputState . cursor)
+    return (curr cursor)
+\end{code}
+
+Finally, we are ready to specify the interpreter for the language.
+
+
 
 Statements NOT consuming input
 ------------------------------

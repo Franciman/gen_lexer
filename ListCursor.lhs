@@ -19,8 +19,8 @@ data ListCursor a = ListCursor
 
 Constructing a list zipper from a list is really easy, but the list must be non empty!
 \begin{code}
-cursor :: NonEmpty a -> ListCursor a
-cursor (x :| xs) = ListCursor [] x xs
+zipped :: NonEmpty a -> ListCursor a
+zipped (x :| xs) = ListCursor [] x xs
 \end{code}
 
 We want predicates telling us whether there is more data:
